@@ -36,7 +36,7 @@ async def job_categories() -> str:
     categories = [f"ID: {category['id']}\nName: {category['attributes']['name']}" for category in response["data"]]
     return "Here is a list of all available categories when searching for published jobs:\n\n" + "\n---\n".join(categories)
 
-@mcp.tool(name="Find jobs by category")
+@mcp.tool()
 async def get_jobs_by_category(category_id: str, limit: int) -> str:
     """Find jobs matching a given category.
 
@@ -58,11 +58,11 @@ def format_job_details(job: dict) -> str:
 ID: {job["id"]}
 Title: {job["attributes"]["translations"]["texts"]["title"]}
 Deadline: {job["attributes"]["dates"]["deadline"]}
-Link to application form: {job["links"].get("apply", "No link was found")}
+Link to application form: {job["links"].get("apply", None)}
 """
 
-@mcp.tool(name="Get job description")
-async def get_jobs_description(job_id: int) -> str:
+@mcp.tool()
+async def get_job_description(job_id: int) -> str:
     """Retrieves the description of a job, in HTML.
 
     Args:

@@ -1,11 +1,8 @@
-from email.policy import strict
 from typing import Any
 import httpx
 from mcp.server.fastmcp import FastMCP
-from mcp.server.fastmcp.prompts import base
 
-# Initialize FastMCP server
-mcp = FastMCP("jobs")
+mcp = FastMCP("Job Offers")
 
 API_BASE = "https://api.varbi.com/v1"
 USER_AGENT = "mcp-varbi-poc/1.0"
@@ -27,9 +24,9 @@ async def make_api_call(resource: str) -> dict[str, Any] | None:
             return None
 
 
-@mcp.resource("resource://jobs/categories", name="Job categories", description="A list of labels used to categorize published job offers.")
+@mcp.resource("resource://jobs/categories", name="Categories", description="A list of labels used to categorize published job offers.")
 async def job_categories() -> str:
-    """Get all available job categories."""
+    """All available job categories."""
     resource = "/jobs/taxonomies/occupation-field"
     response = await make_api_call(resource)
 
@@ -37,9 +34,9 @@ async def job_categories() -> str:
         return "Unable to fetch job categories."
 
     categories = [f"ID: {category['id']}\nName: {category['attributes']['name']}" for category in response["data"]]
-    return "\n---\n".join(categories)
+    return "Here is a list of all available categories when searching for published jobs:\n\n" + "\n---\n".join(categories)
 
-@mcp.tool()
+@mcp.tool(name="Find jobs by category")
 async def get_jobs_by_category(category_id: str, limit: int) -> str:
     """Find jobs matching a given category.
 
@@ -51,7 +48,7 @@ async def get_jobs_by_category(category_id: str, limit: int) -> str:
     response = await make_api_call(resource)
 
     if not response or "data" not in response:
-        return "Unable to fetch jobs, or not jobs were found."
+        return "Unable to fetch jobs, or no jobs were found."
 
     jobs = [format_job_details(job) for job in response["data"]]
     return "\n---\n".join(jobs)
@@ -61,9 +58,10 @@ def format_job_details(job: dict) -> str:
 ID: {job["id"]}
 Title: {job["attributes"]["translations"]["texts"]["title"]}
 Deadline: {job["attributes"]["dates"]["deadline"]}
+Link to application form: {job["links"].get("apply", "No link was found")}
 """
 
-@mcp.tool()
+@mcp.tool(name="Get job description")
 async def get_jobs_description(job_id: int) -> str:
     """Retrieves the description of a job, in HTML.
 
@@ -79,5 +77,4 @@ async def get_jobs_description(job_id: int) -> str:
     return response["data"]["attributes"]["texts"]["descriptions"]["combined"]
 
 if __name__ == "__main__":
-    # Initialize and run the server
     mcp.run(transport='stdio')
